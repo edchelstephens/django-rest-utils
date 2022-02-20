@@ -1,0 +1,7 @@
+# Django
+Django==4.0.2 # https://github.com/django/django
+djangorestframework==3.13.1 # https://github.com/encode/django-rest-framework
+
+
+# Formatters
+black==22.1.0 # https://github.com/psf/black
