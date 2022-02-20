@@ -1,6 +1,6 @@
 # `Django Rest Utils`
 
-## `Django + Django Rest Framework + Testing Utilities`
+## `Django + Django Rest Framework + Testing - Utilities`
 
 ### `Enables the Django - ilities`
 
