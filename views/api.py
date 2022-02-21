@@ -15,7 +15,7 @@ from rest_framework.status import (
 )
 
 from utils.mixins.request import DjangoRequestMixin, RestRequestMixin
-from utils.exceptions import HumanReadableError
+from .exceptions import HumanReadableError
 from utils.debug import (
     pprint_data,
     debug_exception,
@@ -43,13 +43,8 @@ class DjangoAPIMixin:
     """
 
     status = 200
-
     RESPONSE = JsonResponse 
-
-    CONTENT_TYPE = None
-
-    RESPONSE_CLASSES = ( JsonResponse, Response )
-
+    CONTENT_TYPE = "application/json"
 
     error_dict = {
         "success": False,
@@ -64,20 +59,6 @@ class DjangoAPIMixin:
         "message": "Please contact system administrator.",
         "errors": None 
     }
-
-
-    
-    def __init__(self, *args, **kwargs):
-        """Initialize base class and check validity of RESPONSE class attribute of child classes."""
-        try:
-            super().__init__()
-            if self.RESPONSE is None:
-                raise ValueError("RESPONSE object must be set")
-            elif self.RESPONSE not in DjangoAPIMixin.RESPONSE_CLASSES:
-                raise TypeError("Invalid RESPONSE object, must be one of {}".format(DjangoAPIMixin.RESPONSE_CLASSES))
-        except Exception as exc:
-            debug_exception(exc)
-            raise exc
 
     def get_content_type(self, content_type):
         """Get view response content_type*.
@@ -135,27 +116,8 @@ class DjangoAPIMixin:
         
         return response
 
-    def error_access_response(self, title="Unauthorized Access", message="You are not authorized to perform this operation"):
-        """Return error access response data.
-        
-        Temporary helper method for checking revoked single employee timekeeper access
-        on legacy save applications endpoints(e.g. sync logs, overtime save, etc).
-        """
-        try:
-            error_dict = {
-                "title": title,
-                "message": message
-            }
-            
-            if settings.DEBUG:
-                pprint_data(error_dict, "Error Data", bg="red")
-                
-            return self.RESPONSE(data=error_dict, status=HTTP_403_FORBIDDEN)
-        except Exception as exc:
-            debug_exception(exc)
-            raise exc
 
-    def server_error_response(self, exception, message="Please contact system administrator.", title="Something went wrong.", status=500, errors=None):
+    def server_error_response(self, exception, message="Please contact system administrator.", title="Something went wrong.", status=HTTP_500_INTERNAL_SERVER_ERROR, errors=None):
         """Return default server error response with debugging."""
         self.status = status
         self.error_dict["title"] = title
@@ -174,19 +136,12 @@ class DjangoAPIMixin:
         self.error_dict["errors"] = errors if errors else []
         raise HumanReadableError(message)
 
-    def stopper(self):
+    def stopper(self) -> None:
         """For testing human readable exception clauses.
         
         Raises HumanReadableError.
         """
         self.raise_error(message="Stopper", title="Testing")
-
-    def debugger(self):
-        """Call utils.debug.debugger which raises RuntimeError to stop execution.
-        
-        Mimiced from javascript `debugger` statement.
-        """
-        _debugger()
 
     def is_error_human_readable(self, exception):
         """Check if error exception is human readable."""
