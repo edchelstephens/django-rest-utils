@@ -1,8 +1,11 @@
-"""Module for our apis built using Django Rest Framework."""
+"""Module for views wrappers."""
+
+from typing import Optional, List
+
 
 from django.conf import settings
 from django.views.generic.base import View
-from django.http.response import JsonResponse
+from django.http.response import JsonResponse, HttpResponse
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,18 +14,16 @@ from rest_framework.status import (
     is_client_error,
     is_server_error,
     HTTP_500_INTERNAL_SERVER_ERROR,
-    HTTP_403_FORBIDDEN,
 )
 
-from utils.mixins.request import DjangoRequestMixin, RestRequestMixin
-from .exceptions import HumanReadableError
-from utils.debug import (
-    pprint_data,
-    debug_exception,
-    debugger as _debugger
-)
+from views.request import DjangoRequestMixin, RestRequestMixin
+from exceptions import HumanReadableError
+from debug.debug import DebuggerMixin
 
-class DjangoAPIMixin:
+
+RequestResponseData = list | dict
+
+class DjangoAPIMixin(DebuggerMixin):
     """Django API base class mixin.* 
     
     Created to standardize handling request and response.
@@ -37,9 +38,6 @@ class DjangoAPIMixin:
                or
     - django's JsonResponse
     
-    Author: 
-        Edchel Stephen Nini(ESN)
-        edchelstephens@gmail.com
     """
 
     status = 200
@@ -60,7 +58,7 @@ class DjangoAPIMixin:
         "errors": None 
     }
 
-    def get_content_type(self, content_type):
+    def get_content_type(self, content_type:str) -> str:
         """Get view response content_type*.
         
         content_type possible values:
@@ -79,11 +77,11 @@ class DjangoAPIMixin:
         return content_type if content_type is not None else self.CONTENT_TYPE
 
 
-    def get_response(self, data, status, content_type):
+    def get_response(self, data:RequestResponseData, status:int, content_type:str) -> HttpResponse:
         """Get the returned response."""
         return self.RESPONSE(data=data, status=status, content_type=content_type)
 
-    def success_response(self, data, status=200, content_type=None):
+    def success_response(self, data:RequestResponseData, status=200, content_type:Optional["str"]=None) -> HttpResponse:
         """Method for returning success response from api."""
         if not is_success(status):
             status=200
@@ -93,7 +91,7 @@ class DjangoAPIMixin:
         response = self.get_response(data, status, content_type)
         return response
 
-    def error_response(self, exception, error_data, status=400, content_type=None):
+    def error_response(self, exception:Exception, error_data:dict, status=400, content_type:Optional["str"]=None) -> HttpResponse:
         """Method for returning error response from api.
         
         NOTE: This should be called in the context of an except block.
@@ -106,7 +104,7 @@ class DjangoAPIMixin:
         """
 
         if settings.DEBUG:
-            debug_exception(exception)
+            self.debug_exception(exception)
 
         self.set_error_data(exception, error_data)
         self.set_error_status_code(status)
@@ -117,22 +115,25 @@ class DjangoAPIMixin:
         return response
 
 
-    def server_error_response(self, exception, message="Please contact system administrator.", title="Something went wrong.", status=HTTP_500_INTERNAL_SERVER_ERROR, errors=None):
+    def server_error_response(self, 
+        exception:Exception, 
+        message="Please contact system administrator.", 
+        title="Something went wrong.", 
+        status=HTTP_500_INTERNAL_SERVER_ERROR, 
+        errors:Optional[List]=None) -> HttpResponse:
         """Return default server error response with debugging."""
         self.status = status
         self.error_dict["title"] = title
         self.error_dict["message"] = message
-        self.error_dict["description"] = "Something went wrong. Please contact system administrator."
         self.error_dict["errors"] = errors if errors else str(exception)
         
         return self.error_response(exception, error_data=self.error_dict, status=self.status)
 
-    def raise_error(self, message="An error occurred", title="Something went wrong", status=400, errors=None):
+    def raise_error(self, message="An error occurred", title="Something went wrong", status=400, errors:Optional[List]=None) -> None:
         """Set status error status code and raise the human readable error."""
         self.status = status
         self.error_dict["title"] = title
         self.error_dict["message"] = message
-        self.error_dict["description"] = message
         self.error_dict["errors"] = errors if errors else []
         raise HumanReadableError(message)
 
@@ -143,11 +144,11 @@ class DjangoAPIMixin:
         """
         self.raise_error(message="Stopper", title="Testing")
 
-    def is_error_human_readable(self, exception):
+    def is_error_human_readable(self, exception:Exception) -> bool:
         """Check if error exception is human readable."""
         return isinstance(exception, HumanReadableError)
 
-    def set_error_data(self, exception, error_data):
+    def set_error_data(self, exception:Exception, error_data:dict) -> None:
         """Ensure correct error response data - a maping object serializable to JSON.*
         
         * On this format: { 
@@ -164,12 +165,11 @@ class DjangoAPIMixin:
             if self.is_error_human_readable(exception):
                 exception_message = str(exception)
                 self.error_dict["message"] = exception_message
-                self.error_dict["description"] = exception_message
             
         except Exception:
             self.error_dict = self.default_error_dict
 
-    def is_valid_error_dict(self, error_data):
+    def is_valid_error_dict(self, error_data:dict) -> bool:
         """Check if error_data is in valid mapping format same as default_error_dict."""
         try:
             valid = all((
@@ -181,7 +181,7 @@ class DjangoAPIMixin:
         except Exception:
             return False
 
-    def set_error_status_code(self, code):
+    def set_error_status_code(self, code:int) -> None:
         """Verify is code is correct error status code else default to 400."""
         try:
             if self.is_valid_error_code(self.status):
@@ -193,7 +193,7 @@ class DjangoAPIMixin:
         except Exception:
             self.status = 400
 
-    def is_valid_error_code(self, code):
+    def is_valid_error_code(self, code:int) -> bool:
         """Check if code is valid error status code."""
         return is_client_error(code) or is_server_error(code)
 
