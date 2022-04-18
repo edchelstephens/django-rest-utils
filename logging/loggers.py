@@ -9,6 +9,14 @@ from django.utils.termcolors import colorize
 class TerminalLoggingMixin:
     """Mixin for terminal logging."""
 
+    def make_bold(self, text:str, fg="red") -> str:
+        """Return text as bolded"""
+        return colorize(text, opts=("bold",), fg=fg)
+
+    def pprint_symbols(self, symbol="=", symbol_repetition=42, bg="green") -> str:
+        """Print colorized symbol repeated."""
+        print(colorize(symbol*symbol_repetition, opts=("bold",), fg="white", bg=bg))
+
     def pprint_label(
         self, label="DATA", symbol="=", symbol_repetition=20, fg="white", bg="green"
     ) -> None:
