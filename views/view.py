@@ -77,9 +77,12 @@ class DjangoViewAPIMixin(DebuggerMixin):
         return content_type if content_type is not None else self.CONTENT_TYPE
 
 
-    def get_response(self, data:RequestResponseData, status:int, content_type:str) -> HttpResponse:
+    def get_response(self, data:RequestResponseData, status:int, content_type:str, **kwargs) -> HttpResponse:
         """Get the returned response."""
-        return self.RESPONSE(data=data, status=status, content_type=content_type)
+        try:
+            return self.RESPONSE(data=data, status=status, content_type=content_type, **kwargs)
+        except Exception:
+            return self.RESPONSE(data=data, status=status, content_type=content_type)
 
     def success_response(self, data:RequestResponseData, status=200, content_type:Optional["str"]=None) -> HttpResponse:
         """Method for returning success response from api."""
