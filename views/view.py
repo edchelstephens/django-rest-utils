@@ -23,7 +23,7 @@ from debug.debug import DebuggerMixin
 
 RequestResponseData = list | dict
 
-class DjangoAPIMixin(DebuggerMixin):
+class DjangoViewAPIMixin(DebuggerMixin):
     """Django API base class mixin.* 
     
     Created to standardize handling request and response.
@@ -198,7 +198,7 @@ class DjangoAPIMixin(DebuggerMixin):
         return is_client_error(code) or is_server_error(code)
 
 
-class API(DjangoAPIMixin, RestRequestMixin, APIView):
+class API(DjangoViewAPIMixin, RestRequestMixin, APIView):
     """Our class based view for rest_framework api views.
     
     https://www.django-rest-framework.org/api-guide/views/#class-based-views
@@ -206,7 +206,7 @@ class API(DjangoAPIMixin, RestRequestMixin, APIView):
 
     RESPONSE = Response
 
-class DjangoView(DjangoAPIMixin, DjangoRequestMixin, View):
+class DjangoView(DjangoViewAPIMixin, DjangoRequestMixin, View):
     """Our class based view for django views.
     
     https://docs.djangoproject.com/en/3.2/topics/class-based-views/#class-based-views
