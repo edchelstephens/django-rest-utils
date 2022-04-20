@@ -201,7 +201,7 @@ class DjangoViewAPIMixin(DebuggerMixin):
         return is_client_error(code) or is_server_error(code)
 
 
-class API(DjangoViewAPIMixin, RestRequestMixin, APIView):
+class RestAPIView(DjangoViewAPIMixin, RestRequestMixin, APIView):
     """Our class based view for rest_framework api views.
     
     https://www.django-rest-framework.org/api-guide/views/#class-based-views
