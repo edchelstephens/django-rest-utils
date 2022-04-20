@@ -24,7 +24,7 @@ from debug.debug import DebuggerMixin
 RequestResponseData = list | dict
 
 class DjangoViewAPIMixin(DebuggerMixin):
-    """Django API base class mixin.* 
+    """Django View API base class mixin.* 
     
     Created to standardize handling request and response.
 
