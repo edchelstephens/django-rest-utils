@@ -18,7 +18,7 @@ from rest_framework.status import (
 
 from views.request import DjangoRequestMixin, RestRequestMixin
 from exceptions import HumanReadableError
-from debug.debug import DebuggerMixin
+from logging.debug import DebuggerMixin
 
 
 RequestResponseData = list | dict
