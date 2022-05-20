@@ -65,7 +65,7 @@ class DjangoViewAPIMixin(DebuggerMixin):
             'text/html'
             'text/plain'
             'application/json'
-            # and others
+            etc
 
         Defaults to class attribute CONTENT_TYPE, which can be set by children classes.
 
