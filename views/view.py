@@ -90,7 +90,7 @@ class DjangoViewAPIMixin(DebuggerMixin):
         self,
         data: RequestResponseData,
         status=200,
-        content_type: Optional["str"] = None,
+        content_type: Optional[str] = None,
     ) -> HttpResponse:
         """Method for returning success response from api."""
         if not is_success(status):
@@ -106,7 +106,7 @@ class DjangoViewAPIMixin(DebuggerMixin):
         exception: Exception,
         error_data: dict,
         status=400,
-        content_type: Optional["str"] = None,
+        content_type: Optional[str] = None,
     ) -> HttpResponse:
         """Method for returning error response from api.
 
