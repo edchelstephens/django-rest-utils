@@ -16,7 +16,7 @@ from rest_framework.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
-from request import DjangoRequestMixin, RestRequestMixin
+from views.request import DjangoRequestMixin, RestRequestMixin
 from exceptions import HumanReadableError
 from logging.debug import DebuggerMixin
 
@@ -46,18 +46,12 @@ class DjangoViewAPIMixin(DebuggerMixin):
     CONTENT_TYPE = "application/json"
 
     error_dict = {
-        "title": "Something went wrong",
-        "message": "Please contact system administrator.",
+        "title": "Error",
+        "message": "Unable to process request.",
         "errors": None,
     }
 
-    default_error_dict = {
-        "title": "Something went wrong",
-        "message": "Please contact system administrator.",
-        "errors": None,
-    }
-
-    def get_content_type(self, content_type: str) -> str:
+    def get_content_type(self, content_type: Optional[str] = None) -> str:
         """Get view response content_type*.
 
         content_type possible values:
@@ -65,7 +59,7 @@ class DjangoViewAPIMixin(DebuggerMixin):
             'text/html'
             'text/plain'
             'application/json'
-            etc
+            # and others
 
         Defaults to class attribute CONTENT_TYPE, which can be set by children classes.
 
@@ -104,8 +98,8 @@ class DjangoViewAPIMixin(DebuggerMixin):
     def error_response(
         self,
         exception: Exception,
-        error_data: dict,
-        status=400,
+        error_data: Optional[dict] = None,
+        status: Optional[int] = None,
         content_type: Optional[str] = None,
     ) -> HttpResponse:
         """Method for returning error response from api.
@@ -122,8 +116,14 @@ class DjangoViewAPIMixin(DebuggerMixin):
         if settings.DEBUG:
             self.debug_exception(exception)
 
-        self.set_error_data(exception, error_data)
-        self.set_error_status_code(status)
+        if error_data is None:
+            error_data = self.error_dict
+
+        if status is None:
+            status = self.status
+
+        error_data = self.get_error_data(exception, error_data)
+        status = self.get_error_status_code(status)
 
         content_type = self.get_content_type(content_type)
         response = self.get_response(error_data, status, content_type)
@@ -133,8 +133,8 @@ class DjangoViewAPIMixin(DebuggerMixin):
     def server_error_response(
         self,
         exception: Exception,
-        title="Something went wrong",
-        message="Please contact system administrator.",
+        title="Server Error",
+        message="Please contact developer.",
         status=HTTP_500_INTERNAL_SERVER_ERROR,
         errors: Optional[List] = None,
     ) -> HttpResponse:
@@ -150,8 +150,8 @@ class DjangoViewAPIMixin(DebuggerMixin):
 
     def raise_error(
         self,
-        title="Something went wrong",
-        message="An error occurred",
+        title="Error",
+        message="Unable to process request.",
         status=400,
         errors: Optional[List] = None,
     ) -> None:
@@ -173,7 +173,7 @@ class DjangoViewAPIMixin(DebuggerMixin):
         """Check if error exception is human readable."""
         return isinstance(exception, HumanReadableError)
 
-    def set_error_data(self, exception: Exception, error_data: dict) -> None:
+    def get_error_data(self, exception: Exception, error_data: dict) -> None:
         """Ensure correct error response data - a maping object serializable to JSON.*
 
         * On this format: {
@@ -183,16 +183,28 @@ class DjangoViewAPIMixin(DebuggerMixin):
         """
         try:
             if self.is_valid_error_dict(error_data):
-                self.error_dict = error_data
+                error_data = error_data
             else:
-                self.error_dict = self.default_error_dict
+                error_data = self.get_default_error_dict()
 
             if self.is_error_human_readable(exception):
                 exception_message = str(exception)
-                self.error_dict["message"] = exception_message
+                error_data["message"] = exception_message
 
         except Exception:
-            self.error_dict = self.default_error_dict
+            error_data = self.get_default_error_dict()
+
+        finally:
+
+            return error_data
+
+    def get_default_error_dict(self) -> dict:
+        """Get default error dict."""
+        return {
+            "title": "Error",
+            "message": "Unable to process request.",
+            "errors": None,
+        }
 
     def is_valid_error_dict(self, error_data: dict) -> bool:
         """Check if error_data is in valid mapping format same as default_error_dict."""
@@ -200,25 +212,28 @@ class DjangoViewAPIMixin(DebuggerMixin):
             valid = all(
                 (
                     isinstance(error_data, dict),
-                    "title" in error_data,
-                    "message" in error_data,
+                    isinstance(error_data.get("title"), str),
+                    isinstance(error_data.get("message"), str),
                 )
             )
             return valid
         except Exception:
             return False
 
-    def set_error_status_code(self, code: int) -> None:
-        """Verify is code is correct error status code else default to 400."""
+    def get_error_status_code(self, code: int) -> int:
+        """Get correct error status code, defaults to 400."""
         try:
+            error_code = 400
+
             if self.is_valid_error_code(self.status):
-                pass
+                error_code = self.status
+
             elif self.is_valid_error_code(code):
-                self.status = code
-            else:
-                self.status = 400
+                error_code = code
+
+            return error_code
         except Exception:
-            self.status = 400
+            return 400
 
     def is_valid_error_code(self, code: int) -> bool:
         """Check if code is valid error status code."""
