@@ -1,0 +1,29 @@
+# Coverage configuration file
+# https://coverage.readthedocs.io/en/stable/config.html
+# https://coverage.readthedocs.io/en/stable/config.html#syntax
+
+
+# https://coverage.readthedocs.io/en/stable/source.html#execution
+# https://coverage.readthedocs.io/en/stable/config.html#run
+[run]
+
+# https://coverage.readthedocs.io/en/stable/branch.html#how-to-measure-branch-coverage
+branch = True
+
+include = 
+    exceptions/*
+    logging/*
+    management/*
+    queryset/*
+    testing/*
+    views/*
+
+
+omit = 
+    *tests*
+    *__init__*
+
+
+[report]
+exclude_lines = 
+    pragma no cover
