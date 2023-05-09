@@ -9,4 +9,5 @@ pytz==2022.1 # https://pypi.org/project/pytz/
 black==22.1.0 # https://github.com/psf/black
 
 pre-commit==3.2.1 # https://pypi.org/project/pre-commit/
-Sphinx==7.0.0 # https://pypi.org/project/Sphinx/
+Sphinx==6.0.0 # https://pypi.org/project/Sphinx/
+furo==2023.3.27 # https://pypi.org/project/furo/
